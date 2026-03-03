@@ -6,7 +6,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 # CONFIG
-BOT_TOKEN = os.environ.get("8718292164:AAFcRvNYU09JN3A019u-6sdnwaSoG8B1ZUk")
+BOT_TOKEN = "8718292164:AAFcRvNYU09JN3A019u-6sdnwaSoG8B1ZUk"
 FOOTBALL_API_KEY = os.environ.get("FOOTBALL_API_KEY", "")
 API_BASE = "https://v3.football.api-sports.io"
 SOFA_BASE = "https://api.sofascore.com/api/v1"
