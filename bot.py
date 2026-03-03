@@ -10,8 +10,8 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 # ── CONFIG ─────────────────────────────────────────────────────
-BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"        # من @BotFather
-FOOTBALL_API_KEY = "YOUR_API_KEY_HERE"   # من api-football.com (مجاني)
+BOT_TOKEN = "8718292164:AAFcRvNYU09JN3A019u-6sdnwaSoG8B1ZUk"        # من @BotFather
+FOOTBALL_API_KEY = "FOOTBALL_API_KEY"   # من api-football.com (مجاني)
 API_BASE = "https://v3.football.api-sports.io"
 
 LEAGUES = {
