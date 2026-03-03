@@ -6,7 +6,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, CallbackQueryHandler, ContextTypes
 
 # CONFIG
-BOT_TOKEN = "8718292164:AAFcRvNYU09JN3A019u-6sdnwaSoG8B1ZUk"
+BOT_TOKEN = os.environ.get("BOT_TOKEN")  # ضع التوكن في Variables على Railway
 FOOTBALL_API_KEY = os.environ.get("FOOTBALL_API_KEY", "")
 API_BASE = "https://v3.football.api-sports.io"
 SOFA_BASE = "https://api.sofascore.com/api/v1"
@@ -23,7 +23,7 @@ LEAGUES = {
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=logging.INFO)
 
-
+# ====== API HELPERS ======
 def api_get(endpoint, params=None):
     headers = {"x-apisports-key": FOOTBALL_API_KEY}
     try:
@@ -33,7 +33,6 @@ def api_get(endpoint, params=None):
         logging.error(f"API Error: {e}")
         return {}
 
-
 def sofa_get(endpoint):
     try:
         r = requests.get(f"{SOFA_BASE}/{endpoint}", headers=SOFA_HEADERS, timeout=10)
@@ -42,7 +41,7 @@ def sofa_get(endpoint):
         logging.error(f"Sofa Error: {e}")
         return {}
 
-
+# ====== KEYBOARD ======
 def main_kb():
     return InlineKeyboardMarkup([
         [InlineKeyboardButton("🔴 نتائج مباشرة", callback_data="live"),
@@ -54,7 +53,7 @@ def main_kb():
         [InlineKeyboardButton("⚡ مباشر SofaScore", callback_data="sofa_live")],
     ])
 
-
+# ====== HANDLERS ======
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     name = update.effective_user.first_name
     text = (
@@ -64,7 +63,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await update.message.reply_text(text, reply_markup=main_kb(), parse_mode="Markdown")
 
-
+# ====== LIVE TEXT ======
 async def get_live_text():
     data = api_get("fixtures", {"live": "all"})
     if not data.get("response"):
@@ -80,7 +79,6 @@ async def get_live_text():
         text += f"🟢 `{mn}'`  *{h}* {hg} - {ag} *{a}*\n    _{lg}_\n\n"
     text += f"_تحديث: {datetime.now().strftime('%H:%M')}_"
     return text
-
 
 async def get_sofa_live_text():
     data = sofa_get("sport/football/events/live")
@@ -99,11 +97,8 @@ async def get_sofa_live_text():
     text += f"_تحديث: {datetime.now().strftime('%H:%M')}_"
     return text
 
-
 async def get_today_text():
     today = date.today().strftime("%Y-%m-%d")
-
-    # SofaScore اولا
     sofa = sofa_get(f"sport/football/scheduled-events/{today}")
     if sofa.get("events"):
         text = f"📅 *مباريات اليوم* - {today}\n📌 {len(sofa['events'])} مباراة (SofaScore)\n\n"
@@ -120,10 +115,7 @@ async def get_today_text():
                 hg = e.get("homeScore", {}).get("current", "")
                 ag = e.get("awayScore", {}).get("current", "")
                 start_ts = e.get("startTimestamp", 0)
-                if start_ts:
-                    tm = datetime.fromtimestamp(start_ts).strftime("%H:%M")
-                else:
-                    tm = "?"
+                tm = datetime.fromtimestamp(start_ts).strftime("%H:%M") if start_ts else "?"
                 if status in ["Ended", "FT"]:
                     text += f"  ✅ {h} *{hg}-{ag}* {a}\n"
                 elif hg != "":
@@ -132,8 +124,6 @@ async def get_today_text():
                     text += f"  ⏰ `{tm}` {h} vs {a}\n"
             text += "\n"
         return text
-
-    # api-football كبديل
     data = api_get("fixtures", {"date": today})
     if not data.get("response"):
         return "📅 *مباريات اليوم*\n\nلا توجد مباريات."
@@ -158,7 +148,6 @@ async def get_today_text():
                 text += f"  ⏰ `{tm}` {h} vs {a}\n"
         text += "\n"
     return text
-
 
 async def get_predict_text():
     today = date.today().strftime("%Y-%m-%d")
@@ -194,7 +183,6 @@ async def get_predict_text():
     text += "⚠️ _للترفيه فقط_"
     return text
 
-
 async def get_odds_text():
     today = date.today().strftime("%Y-%m-%d")
     data = api_get("fixtures", {"date": today})
@@ -226,7 +214,6 @@ async def get_odds_text():
     text += "⚠️ _للمعلومات فقط_"
     return text
 
-
 async def get_standings_text(league_id):
     year = datetime.now().year
     data = api_get("standings", {"league": league_id, "season": year})
@@ -243,7 +230,7 @@ async def get_standings_text(league_id):
     except Exception as e:
         return f"خطا: {e}"
 
-
+# ====== BUTTON HANDLER ======
 async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
     q = update.callback_query
     await q.answer()
@@ -287,15 +274,17 @@ async def handle_button(update: Update, context: ContextTypes.DEFAULT_TYPE):
         kb = [[InlineKeyboardButton("🔙 رجوع للدوريات", callback_data="leagues"), InlineKeyboardButton("🏠 رجوع", callback_data="menu")]]
         await q.edit_message_text(text, reply_markup=InlineKeyboardMarkup(kb), parse_mode="Markdown")
 
-
+# ====== MAIN ======
 def main():
+    if not BOT_TOKEN:
+        print("Error: BOT_TOKEN not set in environment variables.")
+        return
     print("Starting BETSPORT bot...")
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CallbackQueryHandler(handle_button))
     print("Bot is running!")
     app.run_polling()
-
 
 if __name__ == "__main__":
     main()
